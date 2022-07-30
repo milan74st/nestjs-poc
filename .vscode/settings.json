@@ -1,0 +1,24 @@
+{
+  "files.eol": "\n",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/.vscode": true,
+    "**/coverage": true,
+    "**/dist": true,
+    "**/node_modules": true,
+    ".editorconfig": true,
+    ".eslintrc": true,
+    ".eslintrc.js": true,
+    ".gitignore": true,
+    ".prettierignore": true,
+    ".prettierrc": true,
+    "/helm-chart/.prettierrc": true,
+    "tsconfig.build.json": true,
+    "tsconfig.json": true
+  }
+}

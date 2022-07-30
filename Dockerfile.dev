@@ -1,0 +1,48 @@
+# Specify node version and choose image
+FROM node:lts-alpine3.15 AS development
+
+RUN apk update \
+ && apk add curl bash make \
+ && rm -rf /var/cache/apk/*
+
+# Install Instantclient Basic Light Oracle and Dependencies - start
+RUN apk --no-cache add libaio libnsl libc6-compat curl \
+ && cd /tmp \
+ && curl -o instantclient-basiclite.zip https://download.oracle.com/otn_software/linux/instantclient/1913000/instantclient-basiclite-linux.x64-19.13.0.0.0dbru.zip -SL \
+ && unzip instantclient-basiclite.zip \
+ && mv instantclient*/ /usr/lib/instantclient \
+ && rm instantclient-basiclite.zip \
+ && ln -s /usr/lib/instantclient/libclntsh.so.19.1 /usr/lib/libclntsh.so \
+ && ln -s /usr/lib/instantclient/libocci.so.19.1 /usr/lib/libocci.so \
+ && ln -s /usr/lib/instantclient/libociicus.so /usr/lib/libociicus.so \
+ && ln -s /usr/lib/instantclient/libnnz19.so /usr/lib/libnnz19.so \
+ && ln -s /usr/lib/libnsl.so.2 /usr/lib/libnsl.so.1 \
+ && ln -s /lib/libc.so.6 /usr/lib/libresolv.so.2 \
+ && ln -s /lib64/ld-linux-x86-64.so.2 /usr/lib/ld-linux-x86-64.so.2
+
+ENV ORACLE_BASE /usr/lib/instantclient
+ENV LD_LIBRARY_PATH /usr/lib/instantclient
+ENV TNS_ADMIN /usr/lib/instantclient
+ENV ORACLE_HOME /usr/lib/instantclient
+# Install Instantclient Basic Light Oracle and Dependencies - end
+
+# Specify our working directory, this is in our container/in our image
+WORKDIR /milan/src/app
+
+# Copy the package*.json from host to container
+COPY package*.json ./
+
+# Here we install all the deps
+RUN npm install -g npm@8.12.2 \
+ && npm install
+
+# Bundle app source / copy all other files
+COPY . .
+
+# Build the app to the /dist folder
+RUN npm run build
+
+EXPOSE 3001
+
+# # Run app
+CMD [ "node", "dist/main" ]
