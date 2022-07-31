@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-import { Module } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -8,14 +8,10 @@ import { configuration } from '../config/configuration';
 import { HealthModule } from './modules/health/health.module';
 import { PocModule } from './modules/poc/poc.module';
 
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      load: [configuration],
-      isGlobal: true,
-    }),
-    //  MySQL
-    TypeOrmModule.forRootAsync({
+let msVersion: DynamicModule;
+switch (process.env.MS_VERSION) {
+  case 'nestjs-poc-mysql':
+    msVersion = TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
@@ -29,28 +25,42 @@ import { PocModule } from './modules/poc/poc.module';
         logging: ['query', 'error'],
       }),
       inject: [ConfigService],
+    });
+    break;
+  case 'nestjs-poc-oracle':
+  case 'nestjs-poc-oracle-oraclelinux':
+    msVersion = TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'oracle',
+        username: configService.get('db.user'),
+        password: configService.get('db.pass'),
+        connectString:
+          '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=' +
+          configService.get('db.host') +
+          ')(PORT=' +
+          +configService.get<number>('db.port') +
+          '))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=' +
+          configService.get('db.serviceName') +
+          ')))',
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        // synchronize: true,
+        logging: ['query', 'error'],
+      }),
+      inject: [ConfigService],
+    });
+    break;
+  default:
+    break;
+}
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      load: [configuration],
+      isGlobal: true,
     }),
-    //  Oracle
-    // TypeOrmModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   useFactory: (configService: ConfigService) => ({
-    //     type: 'oracle',
-    //     username: configService.get('db.user'),
-    //     password: configService.get('db.pass'),
-    //     connectString:
-    //       '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=' +
-    //       configService.get('db.host') +
-    //       ')(PORT=' +
-    //       +configService.get<number>('db.port') +
-    //       '))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=' +
-    //       configService.get('db.serviceName') +
-    //       ')))',
-    //     entities: [__dirname + '/**/*.entity{.ts,.js}'],
-    //     // synchronize: true,
-    //     logging: ['query', 'error'],
-    //   }),
-    //   inject: [ConfigService],
-    // }),
+    msVersion,
     HealthModule,
     PocModule,
   ],

@@ -28,6 +28,7 @@ services:
       DB_USER: 'root'
       DB_PASS: 'root'
       DB_SERVICE_NAME: 'poc'
+      MS_VERSION: 'nestjs-poc-mysql'
     ports:
       - 3001:3001
 
@@ -57,8 +58,39 @@ services:
       DB_USER: 'oracleuser'
       DB_PASS: 'oraclepwd'
       DB_SERVICE_NAME: 'XEPDB1'
+      MS_VERSION: 'nestjs-poc-oracle'
     ports:
       - 3002:3002
+
+  nestjs-poc-oracle-oraclelinux:
+    image: poc/nestjs-poc-oracle-oraclelinux
+    container_name: nestjs-poc-oracle-oraclelinux
+    build:
+      context: ./
+      dockerfile: Dockerfile.oraclelinux.dev
+      target: development
+    # Mount our host Directory to the docker container
+    # Mount app directory to the docker container milan/src/app
+    # reflect file changes from host to container
+    volumes:
+      - ./:/milan/src/app
+      - /milan/src/app/node_modules
+    # Run in Debug Mode: npm run start:debug --> Don't forget to start your vscode debugger!
+    # Run in dev Mode: npm run start:dev
+    command: npm run start:dev
+    depends_on:
+      - oracle
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      DB_HOST: 'oracle'
+      DB_PORT: '1521'
+      DB_USER: 'oracleuser'
+      DB_PASS: 'oraclepwd'
+      DB_SERVICE_NAME: 'XEPDB1'
+      MS_VERSION: 'nestjs-poc-oracle-oraclelinux'
+    ports:
+      - 3003:3003
 
   # sudo docker run -d -it --rm --name oracle-xe -p 1521:1521 -p 5500:5500 -e ORACLE_PWD=oraclepwd -v /home/ubuntu/oracle/oradata:/opt/oracle/oradata oracle/database:18.4.0-xe
   oracle:
